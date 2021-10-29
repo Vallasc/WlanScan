@@ -1,0 +1,10 @@
+﻿  WlanScan.cpp
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: bool __cdecl pugi::xml_node::operator!(void)const " (??7xml_node@pugi@@QEBA_NXZ) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: class pugi::xml_text __cdecl pugi::xml_node::text(void)const " (?text@xml_node@pugi@@QEBA?AVxml_text@2@XZ) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: class pugi::xml_node __cdecl pugi::xml_node::child(wchar_t const *)const " (?child@xml_node@pugi@@QEBA?AV12@PEB_W@Z) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: wchar_t const * __cdecl pugi::xml_text::as_string(wchar_t const *)const " (?as_string@xml_text@pugi@@QEBAPEB_WPEB_W@Z) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: int __cdecl pugi::xml_text::as_int(int)const " (?as_int@xml_text@pugi@@QEBAHH@Z) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: __cdecl pugi::xml_document::xml_document(void)" (??0xml_document@pugi@@QEAA@XZ) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: __cdecl pugi::xml_document::~xml_document(void)" (??1xml_document@pugi@@QEAA@XZ) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+WlanScan.obj : error LNK2019: riferimento al simbolo esterno "public: struct pugi::xml_parse_result __cdecl pugi::xml_document::load(wchar_t const *,unsigned int)" (?load@xml_document@pugi@@QEAA?AUxml_parse_result@2@PEB_WI@Z) non risolto nella funzione "void __cdecl showprofiles(void)" (?showprofiles@@YAXXZ)
+D:\Repos\WlanScan\x64\Debug\WlanScan.exe : fatal error LNK1120: 8 esterni non risolti
