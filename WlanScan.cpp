@@ -227,8 +227,8 @@ void showNetworks(boolean printJson)
 					networksBssList->wlanBssEntries[num].dot11Bssid[3],
 					networksBssList->wlanBssEntries[num].dot11Bssid[4],
 					networksBssList->wlanBssEntries[num].dot11Bssid[5]);
-				wcout << "{\"BSSID\":" << Mac << "," <<
-					"\"SSID\":" << networkSSID << "," <<
+				wcout << "{\"BSSID\":\"" << Mac << "\"," <<
+					"\"SSID\":\"" << networkSSID << "\"," <<
 					"\"frequency\":" << networksBssList->wlanBssEntries[num].ulChCenterFrequency << "," <<
 					"\"signal\":" << networksBssList->wlanBssEntries[num].lRssi << "}";
 				if (num < networksBssList->dwNumberOfItems - 1)
