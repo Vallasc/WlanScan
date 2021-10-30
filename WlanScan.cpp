@@ -64,7 +64,7 @@ int wmain(int argc, wchar_t * argv[])
 	{
 		if (wcscmp(L"--help", argv[i]) == 0 || wcscmp(L"-h", argv[i]) == 0) {
 			showHelp();
-			break;
+			return 0;
 		} else if (wcscmp(L"--networks", argv[i]) == 0 || wcscmp(L"-n", argv[i]) == 0) {
 			_showNetworks = true;
 		} else if (wcscmp(L"--triggerscan", argv[i]) == 0 || wcscmp(L"-t", argv[i]) == 0) {
