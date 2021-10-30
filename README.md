@@ -6,8 +6,10 @@ Based on https://github.com/dfct/WlanScan.
 
 
 ```
-WlanScan - A small utility for triggering scans for wireless networks.
+WlanScan - A small utility for triggering scans for wireless networks for Windows systems
 
-triggerscan       Triggers a scan for wireless networks.
-shownetworks      Shows visible wireless networks.
+--triggerscan, -t        Triggers a scan for wireless networks.
+--networks,    -n        Shows visible wireless networks.
+--json,        -j        Shows networks in json format.
+--help,        -h        Shows this help.
 ```
