@@ -1,4 +1,4 @@
-//WlanScan - Trigger scans for wireless networks, show visible networks, and list established connection profiles
+//WlanScan - Trigger scans for wireless networks and show visible networks
 
 #include <Windows.h>
 #include <VersionHelpers.h>					//Restricting to Vista+ to use API version 2
@@ -16,11 +16,9 @@ using std::endl;
 using std::left;
 using std::setw;
 
-wchar_t version[] = { L"0.0.1" };			//Version, printed in help output
-
-void showhelp();							//Prints the help text
-void shownetworks();						//Shows information on visible networks
-void triggerscan();							//Triggers a scan on each wireless network interface
+void showHelp();							//Prints the help text
+void showNetworks(boolean printJson);		//Shows information on visible networks
+void triggerScan(boolean printJson);		//Triggers a scan on each wireless network interface
 bool checkAdmin();							//Function to check if we're an Admin. Decrypted key information requires this
 
 void wlanInit(HANDLE &wlanHandle, PWLAN_INTERFACE_INFO_LIST &interfaces);			//Function to open the Wlan API handle and gets interface info
@@ -33,14 +31,11 @@ typedef struct _WLAN_CALLBACK_INFO {
 	DWORD callbackReason;
 } WLAN_CALLBACK_INFO;
 
-
 int wmain(int argc, wchar_t * argv[])
 {
 
 	//Set stdout translation to unicode text. This allows us to output unicode characters like \u2713
 	_setmode(_fileno(stdout), _O_U16TEXT);
-	wcout << endl;
-	
 	
 	//Windows XP is not supported due to differences in the Wlan API. 
 	if (!IsWindowsVistaOrGreater())
@@ -55,40 +50,49 @@ int wmain(int argc, wchar_t * argv[])
 	//any parameters. If there aren't any, we should print the help text and exit.
 	if (argc < 2)
 	{
-		showhelp();
+		showHelp();
 		return 0;
 	}
 	
 
-	//We'll use wcscmp to match parameters passed in against what we support. It returns 0 for exact string matches.
-	if (wcscmp(L"/?", argv[1]) == 0)
+	boolean _showNetworks = false;
+	boolean _triggerScan = false;
+	boolean _showJson = false;
+
+
+	for (int i = 1; i < argc; i++) 
 	{
-		showhelp();
+		if (wcscmp(L"--help", argv[i]) == 0 || wcscmp(L"-h", argv[i]) == 0) {
+			showHelp();
+			break;
+		} else if (wcscmp(L"--networks", argv[i]) == 0 || wcscmp(L"-n", argv[i]) == 0) {
+			_showNetworks = true;
+		} else if (wcscmp(L"--triggerscan", argv[i]) == 0 || wcscmp(L"-t", argv[i]) == 0) {
+			_triggerScan = true;
+		} else if (wcscmp(L"--json", argv[i]) == 0 || wcscmp(L"-j", argv[i]) == 0) {
+			_showJson = true;
+		} else {
+			wcout << "Unrecognized command " << argv[i] << ". Run --help." << endl;
+			break;
+		}
 	}
-	else if (wcscmp(L"shownetworks", argv[1]) == 0)
-	{
-		shownetworks();
-	}
-	else if (wcscmp(L"triggerscan", argv[1]) == 0)
-	{
-		triggerscan();
-	}
-	else
-	{
-		//A command line parameter was passed, but it wasn't one we support.
-		wcout << "Unrecognized command line. Run /? for help." << endl;
-	}		
+
+	if (_triggerScan)
+		triggerScan(_showJson);
+	if (_showNetworks)
+		showNetworks(_showJson);
+	
 
 	return 0;
 }
 
-void showhelp()
+void showHelp()
 {
-	wcout << "WlanScan - A small utility for triggering scans for wireless networks\n"
-		<< "\n"
-		<< "\ttriggerscan \tTriggers a scan for wireless networks\n"
-		<< "\tshownetworks \tShows visible wireless networks\n"
-		<< "\n";
+	wcout << "WlanScan - A small utility for triggering scans for wireless networks for Windows systems" << endl << endl
+		<< setw(15) << left << "--triggerscan," << setw(10) << left << "-t"  << "Triggers a scan for wireless networks." << endl
+		<< setw(15) << left << "--networks," << setw(10) << left << "-n" << "Shows visible wireless networks." << endl
+		<< setw(15) << left << "--json," << setw(10) << left << "-j" << "Shows networks in json format." << endl
+		<< setw(15) << left << "--help," << setw(10) << left << "-h" << "Shows this help." << endl << endl;
 	return;
 }
 
@@ -147,7 +151,7 @@ void wlanInit(HANDLE &wlanHandle, PWLAN_INTERFACE_INFO_LIST &interfaces)
 
 }
 
-void shownetworks()
+void showNetworks(boolean printJson)
 {
 	HRESULT result = 0;								//HRESULT to store the result of Wlan API calls
 	HANDLE wlanHandle = NULL;						//HANDLE to the Wlan API
@@ -156,12 +160,14 @@ void shownetworks()
 	//Get the Wlan API handle and interface info
 	wlanInit(wlanHandle, interfaces);
 
+	if (printJson)
+		wcout << "[";
 	//For each interface on the system, we'll print the name and number.
 	for (ULONG i = 0; i < interfaces->dwNumberOfItems; i++)
 	{
-		wcout << "Interface " << i + 1 << ": " << interfaces->InterfaceInfo[i].strInterfaceDescription << endl;
-
-		wcout << endl;
+		if (!printJson) {
+			wcout << "Interface " << i + 1 << ": " << interfaces->InterfaceInfo[i].strInterfaceDescription << endl << endl;
+		}
 
 		PWLAN_BSS_LIST networksBssList = nullptr;
 
@@ -177,32 +183,64 @@ void shownetworks()
 
 		if (result != NO_ERROR)
 		{
-			wcout << "\tError encountered. Code: " << result << endl;
+			if (!printJson)
+				wcout << "\tError encountered. Code: " << result << endl;
 			continue;
 		}
 
-		wcout << "\t" << setw(20) << left << "SSID" << setw(24) << left << "BSSID" << setw(14) << left << "RSSI" << endl;
-		wcout << "\t" << setw(20) << left << "----------------" << setw(24) << left << "------------------" << setw(14) << left << "-----" << endl;
-		for (ULONG num = 0; num < networksBssList->dwNumberOfItems; num++)
-		{
-			wchar_t networkSSID[255] = { L'\0' };
-			for (ULONG a = 0; a < networksBssList->wlanBssEntries[num].dot11Ssid.uSSIDLength; a++)
+		if (!printJson) {
+			wcout << "\t" << setw(20) << left << "SSID" << setw(24) << left << "BSSID" << setw(14) << left << "RSSI" << endl;
+			wcout << "\t" << setw(20) << left << "----------------" << setw(24) << left << "------------------" << setw(14) << left << "-----" << endl;
+			for (ULONG num = 0; num < networksBssList->dwNumberOfItems; num++)
 			{
-				networkSSID[a] = btowc(networksBssList->wlanBssEntries[num].dot11Ssid.ucSSID[a]);
-			}
+				wchar_t networkSSID[255] = { L'\0' };
+				for (ULONG a = 0; a < networksBssList->wlanBssEntries[num].dot11Ssid.uSSIDLength; a++)
+				{
+					networkSSID[a] = btowc(networksBssList->wlanBssEntries[num].dot11Ssid.ucSSID[a]);
+				}
 
-			//wcout << "\t" << setw(40) << left << networkSSID << setw(12) << left << networksBssList->wlanBssEntries[num].dot11Bssid << setw(12) << networksBssList->wlanBssEntries[num].lRssi << endl;
-			char Mac[512];
-			sprintf_s(Mac, "%02x-%02x-%02x-%02x-%02x-%02x",
-				networksBssList->wlanBssEntries[num].dot11Bssid[0],
-				networksBssList->wlanBssEntries[num].dot11Bssid[1],
-				networksBssList->wlanBssEntries[num].dot11Bssid[2],
-				networksBssList->wlanBssEntries[num].dot11Bssid[3],
-				networksBssList->wlanBssEntries[num].dot11Bssid[4],
-				networksBssList->wlanBssEntries[num].dot11Bssid[5]);
-			wcout << "\t" << setw(20) << left << networkSSID << setw(24) << left << Mac << setw(14) << left << networksBssList->wlanBssEntries[num].lRssi << endl;
+				char Mac[512];
+				sprintf_s(Mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+					networksBssList->wlanBssEntries[num].dot11Bssid[0],
+					networksBssList->wlanBssEntries[num].dot11Bssid[1],
+					networksBssList->wlanBssEntries[num].dot11Bssid[2],
+					networksBssList->wlanBssEntries[num].dot11Bssid[3],
+					networksBssList->wlanBssEntries[num].dot11Bssid[4],
+					networksBssList->wlanBssEntries[num].dot11Bssid[5]);
+				wcout << "\t" << setw(20) << left << networkSSID << setw(24) << left << Mac << setw(14) << left << networksBssList->wlanBssEntries[num].lRssi << endl;
+			}
+			wcout << endl;
+		} else {
+			for (ULONG num = 0; num < networksBssList->dwNumberOfItems; num++)
+			{
+				wchar_t networkSSID[255] = { L'\0' };
+				for (ULONG a = 0; a < networksBssList->wlanBssEntries[num].dot11Ssid.uSSIDLength; a++)
+				{
+					networkSSID[a] = btowc(networksBssList->wlanBssEntries[num].dot11Ssid.ucSSID[a]);
+				}
+
+				char Mac[512];
+				sprintf_s(Mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+					networksBssList->wlanBssEntries[num].dot11Bssid[0],
+					networksBssList->wlanBssEntries[num].dot11Bssid[1],
+					networksBssList->wlanBssEntries[num].dot11Bssid[2],
+					networksBssList->wlanBssEntries[num].dot11Bssid[3],
+					networksBssList->wlanBssEntries[num].dot11Bssid[4],
+					networksBssList->wlanBssEntries[num].dot11Bssid[5]);
+				wcout << "{\"BSSID\":" << Mac << "," <<
+					"\"SSID\":" << networkSSID << "," <<
+					"\"frequency\":" << networksBssList->wlanBssEntries[num].ulChCenterFrequency << "," <<
+					"\"signal\":" << networksBssList->wlanBssEntries[num].lRssi << "}";
+				if (num < networksBssList->dwNumberOfItems - 1)
+					wcout << ",";
+			}
+			if (i < interfaces->dwNumberOfItems - 1)
+				wcout << ",";
 		}
-		wcout << endl;
+
+		if (printJson)
+			wcout << "]" << endl;
+
 		WlanFreeMemory(networksBssList);
 
 	}
@@ -256,7 +294,7 @@ bool checkAdmin()
 	}
 }
 
-void triggerscan()
+void triggerScan(boolean printJson)
 {
 	HRESULT result = 0;								//HRESULT to store the result of Wlan API calls
 	HANDLE wlanHandle = NULL;						//HANDLE to the WLAN api
@@ -267,7 +305,8 @@ void triggerscan()
 	//For each interface on the system, we'll print the name and number.
 	for (ULONG i = 0; i < interfaces->dwNumberOfItems; i++)
 	{
-		wcout << "Interface " << i + 1 << ": " << interfaces->InterfaceInfo[i].strInterfaceDescription << endl;
+		if(!printJson)
+			wcout << "Interface " << i + 1 << ": " << interfaces->InterfaceInfo[i].strInterfaceDescription << endl;
 
 		//Declare the callback parameter struct
 		WLAN_CALLBACK_INFO callbackInfo = { 0 };
@@ -293,20 +332,25 @@ void triggerscan()
 
 		//Start a scan. If the WlanScan call fails, log the error
 		WlanScan(wlanHandle, &(interfaces->InterfaceInfo[i].InterfaceGuid), NULL, NULL, NULL);
-		if (GetLastError() != ERROR_SUCCESS)
-		{
-			wcout << "\tError triggering scan on interface " << i + 1 << ". Error: " << GetLastError() << endl;
-			continue;
-		}
-		else
-		{
-			//Scan request successfully sent
-			wcout << "\tScan request sent. Waiting for reply." << endl;
+		if (!printJson) {
+			if (GetLastError() != ERROR_SUCCESS)
+			{
+				wcout << "Error triggering scan on interface " << i + 1 << ". Error: " << GetLastError() << endl;
+				continue;
+			}
+			else
+			{
+				//Scan request successfully sent
+				wcout << "Scan request sent. Waiting for reply." << endl;
+			}
 		}
 
 				
 		//Wait for the event to be signaled, or an error to occur. Don't wait longer than 15 seconds.
 		DWORD waitResult = WaitForSingleObject(callbackInfo.scanEvent, 15000);
+
+		if (printJson)
+			continue;
 
 		//Check how we got here, via callback or timeout
 		if (waitResult == WAIT_OBJECT_0) 
@@ -324,13 +368,13 @@ void triggerscan()
 		}
 		else if (waitResult == WAIT_TIMEOUT)
 		{
-			wcout << "\tError: No response was received after 15 seconds." << endl;
-			wcout << "\n\tWindows Logo certified wireless drivers are required to complete scans\n"
+			wcout << "Error: No response was received after 15 seconds." << endl;
+			wcout << "\tWindows Logo certified wireless drivers are required to complete scans\n"
 				  << "\tin under four seconds, so there may be something wrong." << endl << endl;
 		}
 		else 
 		{
-			wcout << "\n\tUnknown error waiting for response. Error Code: " << waitResult << endl << endl;
+			wcout << "\tUnknown error waiting for response. Error Code: " << waitResult << endl << endl;
 		}
 
 		wcout << endl;
