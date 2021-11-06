@@ -211,6 +211,7 @@ void showNetworks(boolean printJson)
 			}
 			wcout << endl;
 		} else {
+			if (i > 0) wcout << ",";
 			for (ULONG num = 0; num < networksBssList->dwNumberOfItems; num++)
 			{
 				wchar_t networkSSID[255] = { L'\0' };
@@ -227,15 +228,14 @@ void showNetworks(boolean printJson)
 					networksBssList->wlanBssEntries[num].dot11Bssid[3],
 					networksBssList->wlanBssEntries[num].dot11Bssid[4],
 					networksBssList->wlanBssEntries[num].dot11Bssid[5]);
+
+				if (num > 0) wcout << ",";
 				wcout << "{\"BSSID\":\"" << Mac << "\"," <<
 					"\"SSID\":\"" << networkSSID << "\"," <<
 					"\"frequency\":" << networksBssList->wlanBssEntries[num].ulChCenterFrequency << "," <<
-					"\"signal\":" << networksBssList->wlanBssEntries[num].lRssi << "}";
-				if (num < networksBssList->dwNumberOfItems - 1)
-					wcout << ",";
+					"\"signal\":" << networksBssList->wlanBssEntries[num].lRssi << "," <<
+					"\"interfaceName\":\"" << interfaces->InterfaceInfo[i].strInterfaceDescription << "\"}";
 			}
-			if (i < interfaces->dwNumberOfItems - 1)
-				wcout << ",";
 		}
 
 		if (printJson)
