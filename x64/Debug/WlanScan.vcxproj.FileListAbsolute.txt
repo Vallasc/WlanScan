@@ -1,2 +1,0 @@
-D:\Repos\WlanScan\x64\Debug\WlanScan.exe
-D:\Repos\WlanScan2\x64\Debug\WlanScan.exe

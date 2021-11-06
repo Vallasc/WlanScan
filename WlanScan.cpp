@@ -239,7 +239,7 @@ void showNetworks(boolean printJson)
 		}
 
 		if (printJson)
-			wcout << "]" << endl;
+			wcout << "]";
 
 		WlanFreeMemory(networksBssList);
 
